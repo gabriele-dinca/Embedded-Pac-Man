@@ -17,6 +17,7 @@
 // Business logic libs
 // TODO: maze.h
 
+
 #define themeMode_Threshold 200.0f
 enum themeMode { DARK, LIGHT };
 
@@ -188,7 +189,9 @@ int main(void)
         theme = LIGHT;
     }
 
-    drawMaze(theme);
+    //drawMaze(theme);
+
+    drawStartLogo();
 
     while(1) // infinite loop
     {
