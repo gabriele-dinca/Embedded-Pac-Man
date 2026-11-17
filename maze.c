@@ -1,49 +1,40 @@
 #include "maze.h"
 
-uint8_t maze[ROWS][COLS] = {
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-    {1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1},
-    {1,0,1,0,1,0,1,1,1,1,0,1,0,1,0,1},
-    {1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1},
-    {1,0,1,1,1,0,1,1,1,1,0,1,1,1,0,1},
-    {1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1},
-    {1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,1},
-    {0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0},
-    {1,1,1,1,1,0,1,1,0,1,0,1,1,1,1,1},
-    {1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1},
-    {1,0,1,1,1,1,0,1,0,1,0,1,1,1,0,1},
-    {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1},
-    {1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,1},
-    {1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,1},
-    {1,1,1,0,1,1,0,0,0,0,1,1,0,1,1,1},
-    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+
+CellType_t maze[ROWS][COLS] = {
+    {WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL},
+    {WALL,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,WALL},
+    {WALL,SPCE,WALL,SPCE,WALL,SPCE,WALL,WALL,WALL,WALL,SPCE,WALL,SPCE,WALL,SPCE,WALL},
+    {WALL,SPCE,WALL,SPCE,COIN,SPCE,SPCE,SPCE,SPCE,SPCE,COIN,SPCE,SPCE,WALL,SPCE,WALL},
+    {WALL,SPCE,WALL,WALL,WALL,SPCE,WALL,WALL,WALL,WALL,SPCE,WALL,WALL,WALL,SPCE,WALL},
+    {WALL,SPCE,SPCE,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,SPCE,SPCE,WALL},
+    {WALL,WALL,WALL,WALL,WALL,SPCE,WALL,SPCE,SPCE,WALL,SPCE,WALL,WALL,WALL,WALL,WALL},
+    {SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE},
+    {WALL,WALL,WALL,WALL,WALL,SPCE,WALL,WALL,SPCE,WALL,SPCE,WALL,WALL,WALL,WALL,WALL},
+    {WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL,SPCE,WALL,SPCE,SPCE,SPCE,SPCE,SPCE,WALL},
+    {WALL,SPCE,WALL,WALL,WALL,WALL,SPCE,WALL,SPCE,WALL,SPCE,WALL,WALL,WALL,SPCE,WALL},
+    {WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL},
+    {WALL,SPCE,WALL,WALL,SPCE,WALL,WALL,WALL,WALL,WALL,WALL,WALL,SPCE,WALL,SPCE,WALL},
+    {WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,PACM,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL},
+    {WALL,WALL,WALL,SPCE,WALL,WALL,SPCE,SPCE,SPCE,SPCE,WALL,WALL,SPCE,WALL,WALL,WALL},
+    {WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL}
+};
+
+// each row { LIGHT, DARK } is associates with an entity
+int32_t cellColors[NUM_TYPES][NUM_THEMES] = {
+    { GRAPHICS_COLOR_WHITE, GRAPHICS_COLOR_BLACK },     // Space themes
+    { GRAPHICS_COLOR_GRAY, GRAPHICS_COLOR_BLUE },       // Wall themes
+    { GRAPHICS_COLOR_ORANGE, GRAPHICS_COLOR_YELLOW },       // Pac-Man themes
+    { GRAPHICS_COLOR_GOLD, GRAPHICS_COLOR_GOLD },       // Coin themes
+    { GRAPHICS_COLOR_MAGENTA, GRAPHICS_COLOR_MAGENTA }  // Coin themes
 };
 
 
-
-void drawMaze(enum themeMode_t theme) {
+void drawMaze(ThemeMode_t theme) {
     uint8_t row;
     uint8_t col;
     int16_t x0, y0, x1, y1;
     Graphics_Rectangle cell;
-
-    int32_t corridor_color;
-
-
-    // Theme Management
-    switch(theme) {
-    case LIGHT:
-        corridor_color = GRAPHICS_COLOR_WHITE;
-        break;
-    case DARK:
-        corridor_color = GRAPHICS_COLOR_BLACK;
-        break;
-    default:
-        corridor_color = GRAPHICS_COLOR_BLACK;
-        break;
-    }
-
-    int32_t colorApplied;
 
 
     for (row = 0; row < ROWS; row++) {
@@ -53,21 +44,12 @@ void drawMaze(enum themeMode_t theme) {
             x1 = x0 + CELL - 1;     // right border
             y1 = y0 + CELL - 1;     // bottom border
 
-            switch(maze[row][col]) {
-               case 0:
-                   colorApplied = corridor_color;
-                   break;
-               case 1:
-                   colorApplied = GRAPHICS_COLOR_BLUE;
-                   break;
-               case 2:
-                   colorApplied = GRAPHICS_COLOR_YELLOW;
-            }
+
 
             // Colors of the CELL
             Graphics_setForegroundColor(
                 &g_sContext,
-                colorApplied
+                cellColors[maze[row][col]][theme]
             );
 
             // Draw the CELL on the LCD screen
@@ -103,9 +85,6 @@ void paintCell(uint8_t x, uint8_t y, int32_t color) {
     Graphics_fillRectangle(&g_sContext, &cell);
 
 }
-
-
-
 
 
 

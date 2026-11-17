@@ -15,7 +15,7 @@ StateMachine_t fsm[] = {
 
 // Light sensor config
 #define themeMode_Threshold 200.0f
-enum themeMode_t theme;
+ThemeMode_t theme;
 
 void fn_INIT() {
     current_state = STATE_INIT;
@@ -34,7 +34,7 @@ void fn_INIT() {
     }
 
     // Play melody
-    //playMelody();
+    // playMelody();
 
     // Draw information to continue
     drawContinue();

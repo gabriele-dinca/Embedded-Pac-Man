@@ -1,15 +1,10 @@
-/*
- * pac_man.c
- *
- *  Created on: 16 Nov 2026
- *      Author: gabriele_dinca
- */
 #include <ti/devices/msp432p4xx/inc/msp.h>
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
 #include <ti/grlib/grlib.h>
 #include "LcdDriver/Crystalfontz128x128_ST7735.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "pac_man.h"
 #include "maze.h"
@@ -18,7 +13,7 @@
 #define Y 1
 
 /* ADC results buffer */
-static uint16_t resultsBuffer[2];
+static uint16_t XY_Movement[2];
 
 typedef enum {
     DIR_NONE,
@@ -29,30 +24,41 @@ typedef enum {
 } Direction;
 
 volatile Direction currDirection = DIR_NONE;
-volatile uint8_t makeMove = 0;
+volatile bool makeMove = false;
+
+extern ThemeMode_t theme;
 
 /* ADC results buffer */
-static uint16_t resultsBuffer[2];
+static uint16_t XY_Movement[2];
 
 void _adcInit(){
     /* Configures Pin 6.0 and 4.4 as ADC input */
-        GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P6, GPIO_PIN0, GPIO_TERTIARY_MODULE_FUNCTION);
-        GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P4, GPIO_PIN4, GPIO_TERTIARY_MODULE_FUNCTION);
+        GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P6,
+                                                   GPIO_PIN0,
+                                                   GPIO_TERTIARY_MODULE_FUNCTION);
+
+        GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P4,
+                                                   GPIO_PIN4,
+                                                   GPIO_TERTIARY_MODULE_FUNCTION);
 
         /* Initializing ADC (ADCOSC/64/8) */
         ADC14_enableModule();
-        ADC14_initModule(ADC_CLOCKSOURCE_ADCOSC, ADC_PREDIVIDER_64, ADC_DIVIDER_8, 0);
+        ADC14_initModule(ADC_CLOCKSOURCE_ADCOSC,
+                         ADC_PREDIVIDER_64,
+                         ADC_DIVIDER_8,
+                         0);
 
         /* Configuring ADC Memory (ADC_MEM0 - ADC_MEM1 (A15, A9)  with repeat)
              * with internal 2.5v reference */
         ADC14_configureMultiSequenceMode(ADC_MEM0, ADC_MEM1, true);
+
         ADC14_configureConversionMemory(ADC_MEM0,
-                ADC_VREFPOS_AVCC_VREFNEG_VSS,
-                ADC_INPUT_A15, ADC_NONDIFFERENTIAL_INPUTS);
+                                        ADC_VREFPOS_AVCC_VREFNEG_VSS,
+                                        ADC_INPUT_A15, ADC_NONDIFFERENTIAL_INPUTS);
 
         ADC14_configureConversionMemory(ADC_MEM1,
-                ADC_VREFPOS_AVCC_VREFNEG_VSS,
-                ADC_INPUT_A9, ADC_NONDIFFERENTIAL_INPUTS);
+                                        ADC_VREFPOS_AVCC_VREFNEG_VSS,
+                                        ADC_INPUT_A9, ADC_NONDIFFERENTIAL_INPUTS);
 
         /* Enabling the interrupt when a conversion on channel 1 (end of sequence)
          *  is complete and enabling conversions */
@@ -72,13 +78,19 @@ void _adcInit(){
         ADC14_toggleConversionTrigger();
 }
 
-#define TIMER_PERIOD 5000
+
+/*
+ * ACLK = 32,768 kHz = 32768 Hz
+ * This means 32768 increments per second
+ * TIMER_PERIOD / 32768 = REFRESH_RATE
+ * */
+#define TIMER_PERIOD 4916
 
 /* Timer_A UpMode Configuration Parameter */
 const Timer_A_UpModeConfig upConfig = {
-        TIMER_A_CLOCKSOURCE_ACLK,              // SMCLK Clock Source
-        TIMER_A_CLOCKSOURCE_DIVIDER_1,         // SMCLK/1 = 3MHz
-        TIMER_PERIOD,                           // every half second
+        TIMER_A_CLOCKSOURCE_ACLK,               // ACLK Clock Source
+        TIMER_A_CLOCKSOURCE_DIVIDER_1,          // ACLK/1 = 32,768 kHz
+        TIMER_PERIOD,                           // Configured above
         TIMER_A_TAIE_INTERRUPT_DISABLE,         // Disable Timer interrupt
         TIMER_A_CCIE_CCR0_INTERRUPT_ENABLE ,    // Enable CCR0 interrupt
         TIMER_A_DO_CLEAR                        // Clear value
@@ -93,7 +105,7 @@ void gameTimer_config(void) {
     Timer_A_configureUpMode(TIMER_A1_BASE, &upConfig);
 
     /* Enabling interrupts and starting the timer */
-    Interrupt_enableSleepOnIsrExit();
+    //Interrupt_enableSleepOnIsrExit();
     Interrupt_enableInterrupt(INT_TA1_0);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_UP_MODE);
 
@@ -101,62 +113,99 @@ void gameTimer_config(void) {
     Interrupt_enableMaster();
 }
 
-Pac_Man_t pac_man = {13, 8};
+// Pac-Man initial position on the maze matrix
+Pac_Man_t pac_man = { START_X, START_Y };
 
-void movePac_Man() {
+void movePacMan(void) {
 
-    // Pacman position before moving
+    // Pac-Man position before moving
     uint8_t curr_x = pac_man.x;
     uint8_t curr_y = pac_man.y;
 
+    // Decide whether to apply a new coloring to the matrix
+    bool applyMove = false;
+
     switch (currDirection) {
-        case DIR_TOP: // TOP
-        //printf("TOP\n");
+        case DIR_TOP:
 
-        if (curr_x - 1 >= 0 && maze[curr_x - 1][curr_y] == 0) {
-            maze[curr_x][curr_y] = 0;
-            maze[curr_x - 1][curr_y] = 2;
-            pac_man.x--;
-        } else return;
-        break;
+            if (curr_x - 1 >= 0 &&
+               (maze[curr_x - 1][curr_y] == SPCE ||
+                maze[curr_x - 1][curr_y] == COIN)) { // TOP
 
-        case DIR_BOTTOM:  // BOTTOM
-        //printf("BOTTOM\n");
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x - 1][curr_y] = PACM;
+                pac_man.x--;
 
-        if (curr_x + 1 < 16 && maze[curr_x + 1][curr_y] == 0) {
-            maze[curr_x][curr_y] = 0;
-            maze[curr_x + 1][curr_y] = 2;
-            pac_man.x++;
-        } else return;
-        break;
+                applyMove = true;
+            }
+            break;
 
-        case DIR_RIGHT:  // RIGHT
-        //printf("RIGHT\n");
+        case DIR_BOTTOM:
 
-        if (curr_y + 1 < 16 && maze[curr_x][curr_y + 1] == 0) {
-            maze[curr_x][curr_y] = 0;
-            maze[curr_x][curr_y + 1] = 2;
-            pac_man.y++;
-        } else return;
-        break;
+            if (curr_x + 1 < 16 &&
+               (maze[curr_x + 1][curr_y] == SPCE ||
+                maze[curr_x + 1][curr_y] == COIN)) { // BOTTOM
 
-        case DIR_LEFT: // LEFT
-        //printf("LEFT\n");
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x + 1][curr_y] = PACM;
+                pac_man.x++;
 
-        if (curr_y - 1 >= 0 && maze[curr_x][curr_y - 1] == 0) {
-            maze[curr_x][curr_y] = 0;
-            maze[curr_x][curr_y - 1] = 2;
-            pac_man.y--;
-        } else return;
-        break;
+                applyMove = true;
+            }
+            break;
 
+        case DIR_RIGHT:
+
+            if (curr_y + 1 < 16 &&
+               (maze[curr_x][curr_y + 1] == SPCE ||
+                maze[curr_x][curr_y + 1] == COIN)) { // RIGHT
+
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x][curr_y + 1] = PACM;
+                pac_man.y++;
+
+                applyMove = true;
+            } else if(curr_x == LOOP_HOLE_X && curr_y == LOOP_HOLE_RIGHT_Y) { // Manages loop hole right
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x][LOOP_HOLE_LEFT_Y] = PACM;
+                pac_man.y = LOOP_HOLE_LEFT_Y;
+
+                applyMove = true;
+            }
+            break;
+
+        case DIR_LEFT:
+
+            if (curr_y - 1 >= 0 &&
+               (maze[curr_x][curr_y - 1] == SPCE ||
+                maze[curr_x][curr_y - 1] == COIN)) { // LEFT
+
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x][curr_y - 1] = PACM;
+                pac_man.y--;
+                applyMove = true;
+            } else if (curr_x == LOOP_HOLE_X && curr_y == LOOP_HOLE_LEFT_Y) { // Manages left loop hole
+                maze[curr_x][curr_y] = SPCE;
+                maze[curr_x][LOOP_HOLE_RIGHT_Y] = PACM;
+                pac_man.y = LOOP_HOLE_RIGHT_Y;
+
+                applyMove = true;
+            }
+            break;
+
+        case DIR_NONE:
+            break;
     }
 
-    // new pac-man position
-    paintCell(pac_man.x, pac_man.y, GRAPHICS_COLOR_YELLOW);
-    // old pac-man position
-    paintCell(curr_x, curr_y, GRAPHICS_COLOR_BLACK);
-
+    /* If it was possible to move pac-man in one of the four possible direction,
+     * pac-man is drawn on the new position.
+     */
+    if (applyMove) {
+        // new pac-man position
+        paintCell(pac_man.x, pac_man.y, cellColors[PACM][theme]);
+        // old pac-man position
+        paintCell(curr_x, curr_y, cellColors[SPCE][theme]);
+    }
 
 }
 
@@ -170,24 +219,22 @@ void playGame(void) {
     while(1) {
         PCM_gotoLPM0();
 
-        /*if (makeMove == 1) {
-            makeMove = 0;
-
-            movePac_Man();
-        }*/
+        if (currDirection != DIR_NONE && makeMove) {
+            makeMove = false;
+            movePacMan();
+        }
     }
 }
 
 
 
 
-
+// Timer A1 Handler for gameTick
 void TA1_0_IRQHandler(void) {
     GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0);
 
-    //makeMove = 1;
-    movePac_Man();
+    makeMove = true;
 }
 
 
@@ -195,9 +242,8 @@ void TA1_0_IRQHandler(void) {
 
 /* This interrupt is fired whenever a conversion is completed and placed in
  * ADC_MEM1. This signals the end of conversion and the results array is
- * grabbed and placed in resultsBuffer */
-void ADC14_IRQHandler(void)
-{
+ * grabbed and placed in XY_Movement */
+void ADC14_IRQHandler(void) {
     uint64_t status;
 
     status = ADC14_getEnabledInterruptStatus();
@@ -207,28 +253,28 @@ void ADC14_IRQHandler(void)
     if(status & ADC_INT1) {
 
         /* Store ADC14 conversion results */
-        resultsBuffer[X] = ADC14_getResult(ADC_MEM0);
-        resultsBuffer[Y] = ADC14_getResult(ADC_MEM1);
+        XY_Movement[X] = ADC14_getResult(ADC_MEM0);
+        XY_Movement[Y] = ADC14_getResult(ADC_MEM1);
 
-        if ((resultsBuffer[X] >= 6000 && resultsBuffer[X] <= 10000) &&
-            (resultsBuffer[Y] >= 6000 && resultsBuffer[Y] <= 10000)) {
-            //printf("Returning\n");
+        if ((XY_Movement[X] >= 4000 && XY_Movement[X] < 10000) &&
+            (XY_Movement[Y] >= 4000 && XY_Movement[Y] < 10000)) {
+            // No action is needed
             return;
         }
 
 
-        if (resultsBuffer[Y] > 13000) { // TOP
-            printf("TOP\n");
+        if (XY_Movement[Y] >= 10000) { // TOP
             currDirection = DIR_TOP;
-        } else if (resultsBuffer[Y] < 3000) { // BOTTOM
-            printf("BOTTOM\n");
+
+        } else if (XY_Movement[Y] < 4000) { // BOTTOM
             currDirection = DIR_BOTTOM;
-        } else if (resultsBuffer[X] > 13000) { // RIGHT
-            printf("RIGHT\n");
+
+        } else if (XY_Movement[X] >= 10000) { // RIGHT
             currDirection = DIR_RIGHT;
-        } else if (resultsBuffer[X] < 3000) { // LEFT
-            printf("LEFT\n");
+
+        } else if (XY_Movement[X] < 4000) { // LEFT
             currDirection = DIR_LEFT;
+
         }
     }
 }
