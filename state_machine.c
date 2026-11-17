@@ -43,7 +43,9 @@ void fn_INIT() {
 
 void fn_PLAY() {
     current_state = STATE_PLAY;
-    drawMaze(theme);
+    //drawMaze(theme);
+    DrawMaze_New();
+
     playGame();
 
 }

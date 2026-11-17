@@ -15,15 +15,9 @@
 /* ADC results buffer */
 static uint16_t XY_Movement[2];
 
-typedef enum {
-    DIR_NONE,
-    DIR_TOP,
-    DIR_RIGHT,
-    DIR_BOTTOM,
-    DIR_LEFT
-} Direction;
 
-volatile Direction currDirection = DIR_NONE;
+
+volatile PacDirection_t currDirection = PAC_NONE;
 volatile bool makeMove = false;
 
 extern ThemeMode_t theme;
@@ -126,11 +120,11 @@ void movePacMan(void) {
     bool applyMove = false;
 
     switch (currDirection) {
-        case DIR_TOP:
+        case PAC_UP:
 
             if (curr_x - 1 >= 0 &&
                (maze[curr_x - 1][curr_y] == SPCE ||
-                maze[curr_x - 1][curr_y] == COIN)) { // TOP
+                maze[curr_x - 1][curr_y] == COIN)) { // UP
 
                 maze[curr_x][curr_y] = SPCE;
                 maze[curr_x - 1][curr_y] = PACM;
@@ -140,11 +134,11 @@ void movePacMan(void) {
             }
             break;
 
-        case DIR_BOTTOM:
+        case PAC_DOWN:
 
             if (curr_x + 1 < 16 &&
                (maze[curr_x + 1][curr_y] == SPCE ||
-                maze[curr_x + 1][curr_y] == COIN)) { // BOTTOM
+                maze[curr_x + 1][curr_y] == COIN)) { // DOWN
 
                 maze[curr_x][curr_y] = SPCE;
                 maze[curr_x + 1][curr_y] = PACM;
@@ -154,7 +148,7 @@ void movePacMan(void) {
             }
             break;
 
-        case DIR_RIGHT:
+        case PAC_RIGHT:
 
             if (curr_y + 1 < 16 &&
                (maze[curr_x][curr_y + 1] == SPCE ||
@@ -174,7 +168,7 @@ void movePacMan(void) {
             }
             break;
 
-        case DIR_LEFT:
+        case PAC_LEFT:
 
             if (curr_y - 1 >= 0 &&
                (maze[curr_x][curr_y - 1] == SPCE ||
@@ -193,7 +187,7 @@ void movePacMan(void) {
             }
             break;
 
-        case DIR_NONE:
+        case PAC_NONE:
             break;
     }
 
@@ -201,10 +195,14 @@ void movePacMan(void) {
      * pac-man is drawn on the new position.
      */
     if (applyMove) {
+
         // new pac-man position
-        paintCell(pac_man.x, pac_man.y, cellColors[PACM][theme]);
+        // paintCell(pac_man.x, pac_man.y, cellColors[PACM][theme]);
+        drawPacMan(pac_man.x, pac_man.y, currDirection);
+
         // old pac-man position
-        paintCell(curr_x, curr_y, cellColors[SPCE][theme]);
+        // paintCell(curr_x, curr_y, cellColors[SPCE][theme]);
+        drawCell(curr_x, curr_y, SPCE);
     }
 
 }
@@ -219,7 +217,7 @@ void playGame(void) {
     while(1) {
         PCM_gotoLPM0();
 
-        if (currDirection != DIR_NONE && makeMove) {
+        if (currDirection != PAC_NONE && makeMove) {
             makeMove = false;
             movePacMan();
         }
@@ -263,17 +261,17 @@ void ADC14_IRQHandler(void) {
         }
 
 
-        if (XY_Movement[Y] >= 10000) { // TOP
-            currDirection = DIR_TOP;
+        if (XY_Movement[Y] >= 10000) { // UP
+            currDirection = PAC_UP;
 
-        } else if (XY_Movement[Y] < 4000) { // BOTTOM
-            currDirection = DIR_BOTTOM;
+        } else if (XY_Movement[Y] < 4000) { // DOWN
+            currDirection = PAC_DOWN;
 
         } else if (XY_Movement[X] >= 10000) { // RIGHT
-            currDirection = DIR_RIGHT;
+            currDirection = PAC_RIGHT;
 
         } else if (XY_Movement[X] < 4000) { // LEFT
-            currDirection = DIR_LEFT;
+            currDirection = PAC_LEFT;
 
         }
     }

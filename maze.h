@@ -28,11 +28,12 @@ typedef enum {
 
 // Defines the available types of cell which can be found on the matrix
 typedef enum {
-    SPCE,  // 0=space
-    WALL,  // 1=wall
-    PACM,  // 2=pac_man
-    COIN,  // 3=coin
-    GHST,  // 4=ghost
+    COIN,  // 0=coin
+    SPCE,  // 1=space
+    WALL,  // 2=wall
+    PACM,  // 3=pac_man
+    POWP,   // 4=power pellet
+    GHST,  // 5=ghost
     NUM_TYPES
 } CellType_t ;
 

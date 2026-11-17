@@ -13,6 +13,15 @@ typedef struct {
     uint8_t y;
 } Pac_Man_t;
 
+typedef enum {
+    PAC_UP,
+    PAC_DOWN,
+    PAC_RIGHT,
+    PAC_LEFT,
+    PAC_NONE,
+    NUM_PAC_DIRECTIONS
+} PacDirection_t;
+
 
 void playGame(void);
 

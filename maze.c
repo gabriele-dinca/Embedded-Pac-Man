@@ -3,7 +3,7 @@
 
 CellType_t maze[ROWS][COLS] = {
     {WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL,WALL},
-    {WALL,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,WALL},
+    {WALL,GHST,POWP,SPCE,WALL,SPCE,SPCE,SPCE,SPCE,SPCE,SPCE,WALL,SPCE,SPCE,SPCE,WALL},
     {WALL,SPCE,WALL,SPCE,WALL,SPCE,WALL,WALL,WALL,WALL,SPCE,WALL,SPCE,WALL,SPCE,WALL},
     {WALL,SPCE,WALL,SPCE,COIN,SPCE,SPCE,SPCE,SPCE,SPCE,COIN,SPCE,SPCE,WALL,SPCE,WALL},
     {WALL,SPCE,WALL,WALL,WALL,SPCE,WALL,WALL,WALL,WALL,SPCE,WALL,WALL,WALL,SPCE,WALL},
@@ -22,11 +22,12 @@ CellType_t maze[ROWS][COLS] = {
 
 // each row { LIGHT, DARK } is associates with an entity
 int32_t cellColors[NUM_TYPES][NUM_THEMES] = {
+    { GRAPHICS_COLOR_GOLD, GRAPHICS_COLOR_GOLD },     // Coin themes
     { GRAPHICS_COLOR_WHITE, GRAPHICS_COLOR_BLACK },     // Space themes
     { GRAPHICS_COLOR_GRAY, GRAPHICS_COLOR_BLUE },       // Wall themes
-    { GRAPHICS_COLOR_ORANGE, GRAPHICS_COLOR_YELLOW },       // Pac-Man themes
-    { GRAPHICS_COLOR_GOLD, GRAPHICS_COLOR_GOLD },       // Coin themes
-    { GRAPHICS_COLOR_MAGENTA, GRAPHICS_COLOR_MAGENTA }  // Coin themes
+    { GRAPHICS_COLOR_ORANGE, GRAPHICS_COLOR_YELLOW },   // Pac-Man themes
+    { GRAPHICS_COLOR_GOLD, GRAPHICS_COLOR_GOLD },       // Power Pellet themes
+    { GRAPHICS_COLOR_MAGENTA, GRAPHICS_COLOR_MAGENTA }  // Ghost themes
 };
 
 
@@ -58,6 +59,19 @@ void drawMaze(ThemeMode_t theme) {
             cell.xMax = x1;
             cell.yMax = y1;
             Graphics_fillRectangle(&g_sContext, &cell);
+
+
+        }
+    }
+}
+
+
+void DrawMaze_New() {
+    uint8_t row;
+    uint8_t col;
+    for (row = 0; row < ROWS; row++) {
+        for (col = 0; col < COLS; col++) {
+            drawCell(row,col, maze[row][col]);
         }
     }
 }
