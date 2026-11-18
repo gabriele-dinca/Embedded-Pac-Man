@@ -1,9 +1,12 @@
 #include <ti/devices/msp432p4xx/driverlib/driverlib.h>
+#include "HAL_OPT3001.h"
 #include <stdio.h>
+
 #include "state_machine.h"
 #include "maze.h"
 //#include "melody.h"
 #include "logo.h"
+#include "visual.h"
 
 State_t current_state = STATE_INIT;
 StateMachine_t fsm[] = {
@@ -14,8 +17,8 @@ StateMachine_t fsm[] = {
 
 
 // Light sensor config
-#define themeMode_Threshold 200.0f
-ThemeMode_t theme;
+#define themeThreshold 200.0f
+Theme_t theme;
 
 void fn_INIT() {
     current_state = STATE_INIT;
@@ -27,7 +30,7 @@ void fn_INIT() {
     printf("lux: %f\n", lux);
 
     // Select theme mode based on the sensed value
-    if (lux < themeMode_Threshold) {
+    if (lux < themeThreshold) {
         theme = DARK;
     } else {
         theme = LIGHT;
@@ -44,7 +47,7 @@ void fn_INIT() {
 void fn_PLAY() {
     current_state = STATE_PLAY;
     //drawMaze(theme);
-    DrawMaze_New();
+    drawMaze(theme);
 
     playGame();
 

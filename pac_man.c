@@ -8,6 +8,7 @@
 
 #include "pac_man.h"
 #include "maze.h"
+#include "visual.h"
 
 #define X 0
 #define Y 1
@@ -20,7 +21,7 @@ static uint16_t XY_Movement[2];
 volatile PacDirection_t currDirection = PAC_NONE;
 volatile bool makeMove = false;
 
-extern ThemeMode_t theme;
+extern Theme_t theme;
 
 /* ADC results buffer */
 static uint16_t XY_Movement[2];
@@ -188,26 +189,26 @@ void movePacMan(void) {
             break;
 
         case PAC_NONE:
+            // should not move
             break;
     }
 
-    /* If it was possible to move pac-man in one of the four possible direction,
+    /*
+     * If it was possible to move pac-man in one of the 4 possible direction,
      * pac-man is drawn on the new position.
      */
     if (applyMove) {
 
         // new pac-man position
         // paintCell(pac_man.x, pac_man.y, cellColors[PACM][theme]);
-        drawPacMan(pac_man.x, pac_man.y, currDirection);
+        drawPacMan(pac_man.x, pac_man.y, theme, currDirection);
 
         // old pac-man position
         // paintCell(curr_x, curr_y, cellColors[SPCE][theme]);
-        drawCell(curr_x, curr_y, SPCE);
+        drawCell(curr_x, curr_y, theme, SPCE);
     }
 
 }
-
-
 
 
 void playGame(void) {

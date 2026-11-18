@@ -5,6 +5,8 @@
 #include <ti/grlib/grlib.h>
 #include "LcdDriver/Crystalfontz128x128_ST7735.h"
 
+#include "visual.h"
+
 // ************************ Definitions ************************
 
 #define ROWS 16     // number of rows for the maze matrix
@@ -16,28 +18,9 @@
 #define LOOP_HOLE_RIGHT_Y 15       // Y coordinate of the right loophole
 
 
-// ************************ Data Structures ************************
+// Graphic context
+extern Graphics_Context g_sContext;
 
-
-// Defines the available themes
-typedef enum {
-    LIGHT,      // 0=light
-    DARK,       // 1=dark
-    NUM_THEMES
-} ThemeMode_t;
-
-// Defines the available types of cell which can be found on the matrix
-typedef enum {
-    COIN,  // 0=coin
-    SPCE,  // 1=space
-    WALL,  // 2=wall
-    PACM,  // 3=pac_man
-    POWP,   // 4=power pellet
-    GHST,  // 5=ghost
-    NUM_TYPES
-} CellType_t ;
-
-extern int32_t cellColors[NUM_TYPES][NUM_THEMES];
 
 /*
  * This matrix is designed to resemble the original Pac-Man maze.
@@ -46,7 +29,7 @@ extern int32_t cellColors[NUM_TYPES][NUM_THEMES];
  */
 extern CellType_t maze[ROWS][COLS];
 
-extern Graphics_Context g_sContext;
+
 
 // ************************ Functions ************************
 
@@ -54,9 +37,9 @@ extern Graphics_Context g_sContext;
  * Initialize the maze using a specified theme
  *
  * Params:
- *     - theme: colours to be used
+ *     - theme: colour palette to be used
  */
-void drawMaze(ThemeMode_t theme);
+void drawMaze(Theme_t theme);
 
 
 /*
@@ -67,7 +50,7 @@ void drawMaze(ThemeMode_t theme);
  *     - y: column of the maze matrix
  *     - color: paint to be applied to the 8x8 cell
  */
-void paintCell(uint8_t x, uint8_t y, int32_t color);
+//void paintCell(uint8_t x, uint8_t y, int32_t color);
 
 
 #endif /* __MAZE_H__ */

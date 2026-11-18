@@ -15,6 +15,7 @@ extern Graphics_Context g_sContext;
 // Draws the initial screen of the application
 void drawStartLogo(void);
 
+// Draws the press to play screen
 void drawContinue(void);
 
 #endif /* __LOGO_H__ */

@@ -11,12 +11,12 @@ void drawStartLogo(void) {
     Graphics_fillCircle(&g_sContext, PAC_MAN_x, PAC_MAN_y, PAC_MAN_radius);
 
     // Draws PAC-MAN mouth
-    int16_t center_x = PAC_MAN_x + 10;
-    int16_t center_y = PAC_MAN_y;
+    int center_x = PAC_MAN_x + 10;
+    int center_y = PAC_MAN_y;
 
     Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_BLACK);
 
-    int16_t i;
+    int i;
     for (i = 1; i <= 32; i++) {
         Graphics_drawLine(&g_sContext, center_x, center_y + i, center_x, center_y - i);
         center_x++;

@@ -18,46 +18,24 @@
 #include "state_machine.h"
 
 
-
-
-/* Graphic library context */
+// Graphic library context
 Graphics_Context g_sContext;
 
+// Functions
+void _hwInit();
+void _graphicsInit();
+void _lightSensorInit();
 
 
+// ******************************** Main ******************************
+int main(void) {
+    // Hardware initialization
+    _hwInit();
 
-
-
-void _lightSensorInit() {
-    /* Initialize I2C communication */
-    Init_I2C_GPIO();
-    I2C_init();
-
-    /* Initialize OPT3001 digital ambient light sensor */
-    OPT3001_init();
-
-    __delay_cycles(100000);
-
+    // Main Loop
+    state_machine();
 }
-
-void _graphicsInit() {
-    /* Initializes display */
-    Crystalfontz128x128_Init();
-
-    /* Set default screen orientation */
-    Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
-
-    /* Initializes graphics context */
-    Graphics_initContext(&g_sContext, &g_sCrystalfontz128x128,
-                         &g_sCrystalfontz128x128_funcs);
-    Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_RED);
-    Graphics_setBackgroundColor(&g_sContext, GRAPHICS_COLOR_WHITE);
-    GrContextFontSet(&g_sContext, &g_sFontFixed6x8);
-    Graphics_clearDisplay(&g_sContext);
-
-}
-
-
+// ******************************** Main ******************************
 
 void _hwInit() {
     /* Halting WDT and disabling master interrupts */
@@ -85,14 +63,37 @@ void _hwInit() {
     _lightSensorInit();
 }
 
-// ******************************** Main ******************************
-int main(void) {
+void _graphicsInit() {
+    /* Initializes display */
+    Crystalfontz128x128_Init();
 
-    _hwInit();
+    /* Set default screen orientation */
+    Crystalfontz128x128_SetOrientation(LCD_ORIENTATION_UP);
 
-
-
-    // Main Loop
-    state_machine();
+    /* Initializes graphics context */
+    Graphics_initContext(&g_sContext, &g_sCrystalfontz128x128,
+                         &g_sCrystalfontz128x128_funcs);
+    Graphics_setForegroundColor(&g_sContext, GRAPHICS_COLOR_RED);
+    Graphics_setBackgroundColor(&g_sContext, GRAPHICS_COLOR_WHITE);
+    GrContextFontSet(&g_sContext, &g_sFontFixed6x8);
+    Graphics_clearDisplay(&g_sContext);
 
 }
+
+void _lightSensorInit() {
+    /* Initialize I2C communication */
+    Init_I2C_GPIO();
+    I2C_init();
+
+    /* Initialize OPT3001 digital ambient light sensor */
+    OPT3001_init();
+
+    __delay_cycles(100000);
+
+}
+
+
+
+
+
+
